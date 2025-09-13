@@ -23,25 +23,41 @@ https://github.com/ondramlcoch07/Hide-older-then-4-weaks-in-Google-Sheets-/tree/
    4.	Save
 
 🔹 Toggle button (when unhiden shows olnly past year) 
+
 	•	Go to Insert → Drawing → New.
+ 
 	•	Draw an any shape and if you like, add add text like “Toggle Rows”.
+ 
 	•	Save and position it over the cell you want.
+ 
 	•	Right-click the shape → Assign Script → type toggleOldRows.
 
 🔹 Toggle all button (when unhiden shows all)
+
   	•	Go to Insert → Drawing → New.
+   
 	•	Draw an any shape and if you like, add add text like “Toggle Rows”.
+ 
 	•	Save and position it over the cell you want.
+ 
 	•	Right-click the shape → Assign Script → type toggleOldAllRows.
    
 🔹 Hide button 
+
     •	Go to Insert → Drawing → New.
+	
 	•	Draw an any shape and if you like, add add text like “hide Rows”.
+ 
 	•	Save and position it over the cell you want.
+ 
 	•	Right-click the shape → Assign Script → type hideOldRows.
 
 🔹 Unhide all button 
+
     •	Go to Insert → Drawing → New.
+	
 	•	Draw an any shape and if you like, add add text like “unhide Rows”.
+ 
 	•	Save and position it over the cell you want.
+ 
 	•	Right-click the shape → Assign Script → type unhideAllRows.
