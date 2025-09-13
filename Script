@@ -1,84 +1,125 @@
-function mergeAndColorMonths() {
+function toggleOldRows() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var monthCol = 1; // Column A for months
-  var dateCol = 2;  // Column B for dates
   var lastRow = sheet.getLastRow();
+  var dateColumn = 2; // Column B
+  var today = new Date();
+  var cutoffHide = new Date();
+  cutoffHide.setDate(today.getDate() - 28); // 4 weeks
 
-  if (lastRow < 2) return;
+  var cutoffUnhide = new Date();
+  cutoffUnhide.setFullYear(today.getFullYear() - 1); // 1 year ago
 
-  var dates = sheet.getRange(1, dateCol, lastRow).getValues();
-  var monthRange = sheet.getRange(1, monthCol, lastRow);
-  var monthValues = monthRange.getValues(); // keep existing values
+  // Read all dates at once
+  var dateValues = sheet.getRange(2, dateColumn, lastRow - 1, 1).getValues(); // 2D array
+  var anyHidden = false;
 
-  // Czech month names
-  var monthNames = [
-    "Leden", "Únor", "Březen", "Duben", "Květen", "Červen",
-    "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec"
-  ];
-
-  // Month → Pastel Color map
-  var colors = {
-    "Leden": "#d0e0e3",
-    "Únor": "#c9daf8",
-    "Březen": "#cfe2f3",
-    "Duben": "#d9d2e9",
-    "Květen": "#ead1dc",
-    "Červen": "#e6b8af",
-    "Červenec": "#f9cb9c",
-    "Srpen": "#ffe599",
-    "Září": "#f4cccc",
-    "Říjen": "#fce5cd",
-    "Listopad": "#fff2cc",
-    "Prosinec": "#d9ead3"
-  };
-
-  // Fill month names only for valid dates, leave other rows untouched
-  for (var i = 0; i < lastRow; i++) {
-    var d = dates[i][0];
-    if (Object.prototype.toString.call(d) === "[object Date]" && !isNaN(d)) {
-      monthValues[i][0] = monthNames[d.getMonth()];
-    }
-  }
-  monthRange.setValues(monthValues);
-
-  // Clear old merges safely
-  var mergedRanges = monthRange.getMergedRanges();
-  mergedRanges.forEach(function(range) {
-    range.breakApart();
-  });
-
-  // Merge and color month cells (skip blanks)
-  var start = 1;
-  for (var i = 2; i <= lastRow; i++) {
-    if (monthValues[i - 1][0] !== monthValues[i - 2][0]) {
-      if (i - start > 1 && monthValues[i - 2][0] !== "") {
-        var range = sheet.getRange(start, monthCol, i - start, 1);
-        range.mergeVertically()
-             .setVerticalAlignment("MIDDLE")
-             .setHorizontalAlignment("CENTER");
-        var month = monthValues[i - 2][0];
-        if (colors[month]) range.setBackground(colors[month]);
+  // Check if any old row is hidden
+  for (var i = 0; i < dateValues.length; i++) {
+    var cellValue = dateValues[i][0];
+    if (cellValue instanceof Date && cellValue < cutoffHide) {
+      if (sheet.isRowHiddenByUser(i + 2)) { // +2 because data starts at row 2
+        anyHidden = true;
+        break;
       }
-      start = i;
     }
   }
 
-  // Handle last group (skip blank)
-  if (lastRow - start + 1 > 1 && monthValues[lastRow - 1][0] !== "") {
-    var range = sheet.getRange(start, monthCol, lastRow - start + 1, 1);
-    range.mergeVertically()
-         .setVerticalAlignment("MIDDLE")
-         .setHorizontalAlignment("CENTER");
-    var month = monthValues[lastRow - 1][0];
-    if (colors[month]) range.setBackground(colors[month]);
+  if (anyHidden) {
+    // Unhide only rows from the past year
+    for (var i = 0; i < dateValues.length; i++) {
+      var row = i + 2;
+      var cellValue = dateValues[i][0];
+      if (cellValue instanceof Date && cellValue >= cutoffUnhide) {
+        sheet.showRows(row);
+      }
+    }
+  } else {
+    // Hide consecutive old rows in batches
+    var start = null;
+    for (var i = 0; i <= dateValues.length; i++) {
+      var cellValue = i < dateValues.length ? dateValues[i][0] : null;
+      var shouldHide = cellValue instanceof Date && cellValue < cutoffHide;
+
+      if (shouldHide && start === null) {
+        start = i + 2; // actual row number
+      }
+      if ((!shouldHide || i === dateValues.length) && start !== null) {
+        sheet.hideRows(start, (i + 2) - start);
+        start = null;
+      }
+    }
   }
 }
+function unhideAllRows() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var lastRow = sheet.getMaxRows();
+  sheet.showRows(1, lastRow);
+}
+function hideOldRows() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var lastRow = sheet.getLastRow();
+  var dateColumn = 2; // Column B
+  var today = new Date();
+  var cutoff = new Date();
+  cutoff.setDate(today.getDate() - 28); // 4 weeks
 
-// Only trigger when column B is edited
-function onEdit(e) {
-  if (!e) return;
-  var editedCol = e.range.getColumn();
-  if (editedCol === 2) { // Column B
-    mergeAndColorMonths();
+  var dateValues = sheet.getRange(2, dateColumn, lastRow - 1, 1).getValues();
+  var start = null;
+
+  // Hide consecutive old rows in batches
+  for (var i = 0; i <= dateValues.length; i++) {
+    var cellValue = i < dateValues.length ? dateValues[i][0] : null;
+    var shouldHide = cellValue instanceof Date && cellValue < cutoff;
+
+    if (shouldHide && start === null) {
+      start = i + 2; // actual row number
+    }
+    if ((!shouldHide || i === dateValues.length) && start !== null) {
+      sheet.hideRows(start, (i + 2) - start);
+      start = null;
+    }
+  }
+}
+function toggleOldAllRows() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var lastRow = sheet.getLastRow();
+  var dateColumn = 2; // Column B
+  var today = new Date();
+  var cutoff = new Date();
+  cutoff.setDate(today.getDate() - 28); // 4 weeks = 28 days
+
+  // Read all dates at once
+  var dateValues = sheet.getRange(2, dateColumn, lastRow - 1, 1).getValues(); // 2D array
+  var anyHidden = false;
+
+  // Check if any old row is hidden
+  for (var i = 0; i < dateValues.length; i++) {
+    var cellValue = dateValues[i][0];
+    if (cellValue instanceof Date && cellValue < cutoff) {
+      if (sheet.isRowHiddenByUser(i + 2)) { // +2 because data starts from row 2
+        anyHidden = true;
+        break;
+      }
+    }
+  }
+
+  if (anyHidden) {
+    // Unhide all rows
+    sheet.showRows(1, sheet.getMaxRows());
+  } else {
+    // Hide consecutive old rows in batches
+    var start = null;
+    for (var i = 0; i <= dateValues.length; i++) {
+      var cellValue = i < dateValues.length ? dateValues[i][0] : null;
+      var shouldHide = cellValue instanceof Date && cellValue < cutoff;
+
+      if (shouldHide && start === null) {
+        start = i + 2; // actual row number
+      }
+      if ((!shouldHide || i === dateValues.length) && start !== null) {
+        sheet.hideRows(start, (i + 2) - start);
+        start = null;
+      }
+    }
   }
 }
