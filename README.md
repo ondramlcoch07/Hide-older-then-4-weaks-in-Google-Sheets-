@@ -5,6 +5,7 @@ Script for Google Sheets created by ChatGBT witch hides rows witch are older the
 
 🔹 Step 2: Add the Script 1. Delete any code already there. 2. Paste this script: 
 https://github.com/ondramlcoch07/Hide-older-then-4-weaks-in-Google-Sheets-/tree/main
+
 🔹Time triger 
     1.	Open Apps Script → left sidebar → Triggers (clock icon).
 	  2.	Click Add Trigger → choose:
